@@ -1,7 +1,6 @@
 #include <iostream>
 #include <vector>
 #include <time.h>
-#include <fstream>
 
 class Square{
 public:
@@ -10,7 +9,7 @@ public:
     int size;
     Square(int x, int y, int size) : x(x), y(y), size(size) {};
     friend std::ostream& operator<<(std::ostream& os, const Square& square){
-    	os << "Square(" << square.x << ", " << square.y << ", " << square.size << ")";
+    	os << "Квадрат с координатами верхнего левого угла x = " << square.x << ", y = " << square.y << " и размером стороны  " << square.size;
     	return os;
 	}
 };
@@ -125,43 +124,51 @@ public:
     std::vector<Square> bestResult; //квадраты,участвующие в расстановке, соответствующей minSquares
 
     State(int N) : currentDesk(Desk(N)), minSquares(N * N + 1), currentResult({}), bestResult({}) {}
-    
-    std::vector<Square> find_solution(){
-        // Файл для записи промежуточных результатов
-        std::ofstream outFile("output.txt");
 
+    void addSquare(Square square){
+        currentDesk.placeSquare(square);
+        currentResult.push_back(square);
+        std::cout << "Добавлено:" << square << std::endl;
+    }
+
+    void removeLastSquare(){
+        std::cout << "Удалено:" << currentResult.back() << std::endl;
+        currentDesk.removeSquare(currentResult.back());
+        currentResult.pop_back();
+    }
+
+    std::vector<Square> find_solution(){
         //Оптимизация 1 - для любого квадрата со стороной - простым числом(он в мктод всегда таким уже подаётся) заранее ставим оптимальные 3 квадрата
         int lsize = (currentDesk.N + 1) / 2, ssize = (currentDesk.N) / 2;
-        currentDesk.placeSquare({0, 0, lsize});
-        currentResult.push_back({0, 0, lsize});
-        currentDesk.placeSquare({lsize, 0, ssize});
-        currentResult.push_back({lsize, 0, ssize});
-        currentDesk.placeSquare({0, lsize, ssize});
-        currentResult.push_back({0, lsize, ssize});
-        outFile << *this;
+        addSquare({0, 0, lsize});
+        addSquare({lsize, 0, ssize});
+        addSquare({0, lsize, ssize});
         bool flag = true;
         while (currentResult.size() > 3 || flag){
             flag = false;
             while (!currentDesk.isFull()){
-                if (currentResult.size() >= minSquares) break;
+                // Оптимизация - отсечение заведомо проигрышного решения
+                if (currentResult.size() >= minSquares){
+                    break;
+                    std::cout << "Текущее решение хуже имеющегося лучшего\n";
+                } 
                 // Оптимизация 2 - нахождение наибольшего свободного квадрата
                 Square finding_square = currentDesk.findEmptySquare();
-                currentDesk.placeSquare(finding_square);
-                currentResult.push_back(finding_square);
-                outFile << *this;
+                addSquare(finding_square);
             }
+             
             // Оставляем лучший результат из текущего и имеющегося лучшего
             if (currentResult.size() < minSquares) {
-                outFile << "Текущий результат оказался лучше - было " <<  minSquares << ",стало " << currentResult.size() << "\n";
+                std::cout << "Текущий результат оказался лучше - было " <<  minSquares << " квадратов в расстановке,стало - " << currentResult.size() << "\n";
                 minSquares = currentResult.size();
                 bestResult = currentResult;
             }
-            currentDesk.removeSquare(currentResult.back());
-            currentResult.pop_back();
+            std::cout << *this;
+            removeLastSquare();
+
             // Убираем все квадраты со стороной 1, потому что их никак не уменьшить
             while (!currentResult.empty() && currentResult[currentResult.size()-1].size == 1){
-                currentDesk.removeSquare(currentResult.back());
-                currentResult.pop_back();
+                removeLastSquare();
             }
             //Если возможно, то у последнего не единичного квадрата у меньшаем сторону на 1 и дальшем рассматриваем такой вариант
             if (currentResult.size() > 3){
@@ -169,19 +176,21 @@ public:
                 currentDesk.removeSquare(last_square);
                 currentDesk.placeSquare({last_square.x, last_square.y, last_square.size - 1});
                 currentResult[currentResult.size()-1].size -= 1;
+                std::cout << "У квадрата с координатами x = " << currentResult.back().x << ", y = " << currentResult.back().y << " уменьшаем сторону на 1 и она становится равна: " << currentResult.back().size << std::endl;
             }
         }
-        outFile.close();
         return bestResult;
     }
     friend std::ostream& operator<<(std::ostream& os, const State& state){
-        os << "Текущее состояние:\n";
+        os << "\nОдно из решений:\n";
         os << "Минимальное количество квадратов: " << state.minSquares << "\n";
         os << "Текущие рассматриваемые квадраты:\n";
+        int N = 1;
         for (const auto& square : state.currentResult) {
-            os << square << "\n"; // Использует оператор вывода для класса Square
+            os << N << ") " << square << "\n"; // Использует оператор вывода для класса Square
+            ++N;
         }
-        os << "Текущее состояние доски:\n" << state.currentDesk << "\n"; // Использует оператор вывода для класса Desk
+        os << "\n";
         return os;
     }
     
