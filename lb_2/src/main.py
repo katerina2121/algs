@@ -32,6 +32,16 @@ if __name__ == "__main__":
 
     start = 0
     print("\033[3m\033[36m{}\033[0m".format("\nПРИБЛИЖЕННЫЙ АЛГОРИТМ: АЛГОРИТМ БЛИЖАЙШЕГО СОСЕДА"))
+    print(f"Какой город принять в качестве стартового? 0 - {len(dist_matrix) - 1}")
+    try:
+        answer = int(input())
+        if 0 <= answer < len(dist_matrix):
+            start = answer
+        else:
+            raise ValueError
+    except ValueError:
+        print("Число не соответствует номеру города. Начнем поиск с 0го города")
+
     cost, way = nearest_neighbor_algorithm(start, dist_matrix)
     print(f"Длина пути: {cost}")
     print(f"Путь: {way[0]}", end="")

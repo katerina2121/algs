@@ -272,7 +272,7 @@ def little_algorithm(matrix):
     while priority_queue:
         print(f"\nИзвлекаем из очереди с приоритетом узел с наименьшей нижней оценкой длины маршрута:")
         _, min_node = heappop(priority_queue)
-        print(f"ТЕКУЩИЙ УЗЕЛ: min_node")
+        print(f"ТЕКУЩИЙ УЗЕЛ: {min_node}")
 
         if record is not None and record['length'] <= min_node.bound:
             print(f"Нижняя оценка текущего маршрута больше, чем существующее решение-рекорд, поэтому переходим дальше...")
